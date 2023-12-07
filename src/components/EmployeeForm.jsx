@@ -7,6 +7,7 @@ import {
   Grid,
   TextField,
 } from "@mui/material";
+import Joi from "joi";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -22,6 +23,8 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
     }
   );
 
+  const [errors, setErrors] = useState({});
+
   const navigate = useNavigate();
 
   const handleSubmit = (event) => {
@@ -33,7 +36,7 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
 
     onSubmit(form);
     console.log(form);
-    navigate("/");
+    // navigate("/");
   };
 
   const handleChange = ({ currentTarget: input }) => {
@@ -48,6 +51,39 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
       ...form,
       [input.name]: input.value,
     });
+
+    const result = schema
+      .extract(input.name)
+      .label(input.name)
+      .validate(input.value);
+
+    if (result.error) {
+      // set Errors
+      setErrors({ ...errors, [input.name]: result.error.details[0].message });
+    } else {
+      // remove
+      delete errors[input.name];
+      setErrors(errors);
+    }
+  };
+
+  const schema = Joi.object({
+    name: Joi.string().min(2).max(100).required(),
+    username: Joi.string().min(3).max(20).required(),
+    email: Joi.string()
+      .email({ minDomainSegments: 2, tlds: { allow: ["com", "net"] } })
+      .required(),
+    phone: Joi.string().min(6).max(15).allow("").optional(),
+    address: Joi.string().min(3).max(500).allow("").optional(),
+    website: Joi.string().uri().allow("").optional(),
+  });
+
+  const isFormInvalid = () => {
+    const result = schema.validate(form);
+
+    console.log(result);
+
+    return !!result.error;
   };
 
   return (
@@ -58,12 +94,14 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
       onSubmit={handleSubmit}
     >
       <Card>
-        <CardHeader title={`Add Employee`} />
+        <CardHeader title={`${initialValue ? "Edit" : "Add"} Employee`} />
         <CardContent>
           <Grid container spaceing={2}>
             <Grid item xs={12}>
               <TextField
                 name="name"
+                error={!!errors.name}
+                helperText={errors.name}
                 value={form.name}
                 onChange={handleChange}
                 label="Name"
@@ -74,6 +112,8 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
             <Grid item xs={12}>
               <TextField
                 name="username"
+                error={!!errors.username}
+                helperText={errors.username}
                 value={form.username}
                 onChange={handleChange}
                 label="Username"
@@ -84,6 +124,8 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
             <Grid item xs={12}>
               <TextField
                 name="email"
+                error={!!errors.email}
+                helperText={errors.email}
                 value={form.email}
                 onChange={handleChange}
                 label="Email"
@@ -94,6 +136,8 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
             <Grid item xs={12}>
               <TextField
                 name="phone"
+                error={!!errors.phone}
+                helperText={errors.phone}
                 value={form.phone}
                 onChange={handleChange}
                 label="Phone"
@@ -104,6 +148,8 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
             <Grid item xs={12}>
               <TextField
                 name="address"
+                error={!!errors.address}
+                helperText={errors.address}
                 value={form.address}
                 onChange={handleChange}
                 label="Address"
@@ -114,6 +160,8 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
             <Grid item xs={12}>
               <TextField
                 name="website"
+                error={!!errors.website}
+                helperText={errors.website}
                 value={form.website}
                 onChange={handleChange}
                 label="Website"
@@ -124,7 +172,7 @@ const EmployeeForm = ({ onSubmit, initialValue }) => {
           </Grid>
         </CardContent>
         <CardActions>
-          <Button fullWidth type="submit">
+          <Button fullWidth type="submit" disabled={isFormInvalid()}>
             Submit
           </Button>
         </CardActions>
