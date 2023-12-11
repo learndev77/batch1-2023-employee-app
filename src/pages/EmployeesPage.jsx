@@ -39,6 +39,7 @@ const EmployeesPage = () => {
       // Bugs
       console.log(error);
     }
+
   };
 
   return (
